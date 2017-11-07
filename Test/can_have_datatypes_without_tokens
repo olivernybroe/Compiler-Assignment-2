@@ -1,0 +1,8 @@
+data expression =
+            Mult(expression e1, expression e2) : '(' e1 '*' e2 ')'
+          | Add (expression e1, expression e2) : '(' e1 '+' e2 ')'
+;
+
+data other_expression =
+          | Alternative_2(expression name)      : name
+;

@@ -1,5 +1,7 @@
 import CompilerCompiler.CompilerCompilerLexer;
 import CompilerCompiler.CompilerCompilerParser;
+import com.google.googlejavaformat.java.Formatter;
+import com.google.googlejavaformat.java.FormatterException;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -10,7 +12,10 @@ import org.junit.Test;
 import javax.tools.*;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Collections;
 
 import static org.junit.Assert.*;
@@ -28,7 +33,96 @@ public class AbstractSyntaxTreeTest {
         outContent = null;
     }
 
-    private void parseString(String program) {
+    @Test
+    public void generated_java_code_is_valid() throws Exception {
+        assertTrue(compile(parseFile("generated_java_code_is_valid")));
+    }
+
+    @Test
+    public void cannot_compile_when_undefined_variable_from_the_member_scope() throws Exception {
+        try{
+            String generatedCode = parseFile("cannot_compile_when_undefined_variable_from_the_member_scope");
+        }
+        catch (AssertionError error) {
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void cannot_compile_when_datatype_is_variable_name() throws Exception {
+        try{
+            String generatedCode = parseFile("cannot_compile_when_datatype_is_variable_name");
+        }
+        catch (AssertionError error) {
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void cannot_compile_when_duplicate_variable_name() throws Exception {
+        try{
+            String generatedCode = parseFile("cannot_compile_when_datatype_is_variable_name");
+        }
+        catch (AssertionError error) {
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void cannot_compile_when_variable_occurs_multiple_times_in_method_body() throws Exception {
+        try{
+            String generatedCode = parseFile("cannot_compile_when_variable_occurs_multiple_times_in_method_body");
+        }
+        catch (AssertionError error) {
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void variable_can_occur_multiple_times_in_method_body() throws Exception {
+        String generatedCode = parseFile("variable_can_occur_multiple_times_in_method_body");
+        assertTrue(compile(generatedCode));
+    }
+
+    @Test
+    public void datatype_is_optional() throws Exception {
+        String generatedCode = parseFile("datatype_is_optional");
+        assertTrue(compile(generatedCode));
+    }
+
+    @Test
+    public void empty_document_is_valid() throws Exception {
+        String generatedCode = parseString("");
+        assertTrue(compile(generatedCode));
+    }
+
+    @Test
+    public void can_have_multiple_data_types() throws Exception {
+        String generatedCode = parseFile("can_have_multiple_data_types");
+        assertTrue(compile(generatedCode));
+    }
+
+    @Test
+    public void can_have_datatypes_without_tokens() throws Exception {
+        String generatedCode = parseFile("can_have_multiple_data_types");
+        assertTrue(compile(generatedCode));
+    }
+
+
+
+
+
+    private String parseFile(String fileName) throws Exception{
+        byte[] encoded = Files.readAllBytes(Paths.get("Test/"+fileName));
+
+        return parseString(new String(encoded, "UTF-8"));
+    }
+
+    private String parseString(String program) throws Exception {
         // create a lexer/scanner
         CompilerCompilerLexer lex = new CompilerCompilerLexer(CharStreams.fromString(program));
 
@@ -43,30 +137,13 @@ public class AbstractSyntaxTreeTest {
 
         // Construct an interpreter and run it on the parse tree
         AbstractSyntaxTreeMaker interpreter = new AbstractSyntaxTreeMaker(new PrintStream(outContent));
-        interpreter.visit(parseTree);
+
+        return new Formatter().formatSource(((Start) interpreter.visit(parseTree)).toString());
     }
 
-    @Test
-    public void generated_java_code_is_valid() throws Exception {
-        parseString("" +
-                "// Tokens for the lexer:\n" +
-                "\n" +
-                "NUM #: ('0'..'9')+ ('.'('0'..'9')+)? ;#\n" +
-                "ID  #: ('A'..'Z'|'da'..'z'|'_')+ ;     #\n" +
-                "\n" +
-                "// Example: Expressions\n" +
-                "\n" +
-                "data expr = Constant(NUM v)        : v\n" +
-                "          | Variable(ID name)      : name\n" +
-                "          | Mult(expr e1, expr e2) : '(' e1 '*' e2 ')'\n" +
-                "          | Add (expr e1, expr e2) : '(' e1 '+' e2 ')'\n" +
-                "          ;\n" +
-                "\n"
-        );
-
-        assertTrue(compile("Whatever", outContent.toString()));
+    private boolean compile(String code) throws Exception {
+        return this.compile("Whatever", code);
     }
-    
 
     // creates an in-memory Java file object and compile it
     private boolean compile(String className, String code) throws Exception {
@@ -102,5 +179,12 @@ public class AbstractSyntaxTreeTest {
         fileManager.close();
 
         return success;
+    }
+
+    // executes in-memory Java file object with input value
+    private boolean invokeMethod(String classPackage, String className, Integer input) throws Exception {
+        Class<?> clazz = Class.forName(classPackage + "." + className);
+        return (Boolean) clazz.getDeclaredMethod("toString", String.class)
+                .invoke(clazz.newInstance(), input);
     }
 }

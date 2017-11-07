@@ -41,5 +41,6 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="library" name="com.google.googlejavaformat:google-java-format:1.5" level="project" />
   </component>
 </module>

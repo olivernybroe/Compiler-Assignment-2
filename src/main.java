@@ -119,6 +119,6 @@ class AbstractSyntaxTreeMaker extends AbstractParseTreeVisitor<AbstractSyntaxTre
 
     @Override
     public AbstractSyntaxTree visitTerminal(CompilerCompilerParser.TerminalContext ctx) {
-        return new Terminal(ctx.STRINGTOKEN().getText());
+        return new Terminal(ctx.STRINGTOKEN().getText().substring(1, ctx.STRINGTOKEN().getText().length()-1));
     }
 }
